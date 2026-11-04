@@ -25,15 +25,33 @@
                 <Image Width="256" Height="256"
                     Stretch="Uniform"
                     x:Name="image_gif"
-                    gif:AnimationBehavior.RepeatBehavior="Forever"
-                    gif:AnimationBehavior.SourceUri="/assets/idle.gif" />
+                    gif:AnimationBehavior.RepeatBehavior="Forever" />
             </Border>
         </StackPanel>
     </Border>
 
     <Window.ContextMenu>
         <ContextMenu>
-            <MenuItem Header="Close" Click="ExitMenuItem_Click" />
+            <ContextMenu.ItemContainerStyle>
+                <Style TargetType="MenuItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="MenuItem">
+                                <Border x:Name="ItemBorder" Background="Transparent" Padding="12,6">
+                                    <ContentPresenter ContentSource="Header" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsHighlighted" Value="True">
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="#E5E5E5" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ContextMenu.ItemContainerStyle>
+            <MenuItem Header="설정" Click="SettingsMenuItem_Click" />
+            <MenuItem Header="종료" Click="ExitMenuItem_Click" />
         </ContextMenu>
     </Window.ContextMenu>
 </Window>

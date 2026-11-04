@@ -4,6 +4,7 @@ internal sealed class PetState
 {
     public string Gif { get; private set; } = "idle.gif";
     public string Text { get; private set; } = "AURA FARMING";
+    public string Key => Gif;
 
     public bool Apply(HookEvent hookEvent)
     {
