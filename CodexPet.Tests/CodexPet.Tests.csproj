@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\CodexPet.App\HookEvent.cs" Link="HookEvent.cs" />
+    <Compile Include="..\CodexPet.App\PetState.cs" Link="PetState.cs" />
+    <Compile Include="..\CodexPet.App\OutlinedCaption.cs" Link="OutlinedCaption.cs" />
+    <Compile Include="..\CodexPet.App\PetPipeServer.cs" Link="PetPipeServer.cs" />
+    <Compile Include="..\CodexPet.Shared\DiagnosticLog.cs" Link="DiagnosticLog.cs" />
+  </ItemGroup>
+</Project>

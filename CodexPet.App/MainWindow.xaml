@@ -1,0 +1,39 @@
+﻿<Window x:Class="CodexPet.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CodexPet.App"
+        xmlns:gif="https://github.com/XamlAnimatedGif/XamlAnimatedGif"
+        mc:Ignorable="d"
+        Title="MainWindow" 
+        WindowStyle="None" 
+        SizeToContent="WidthAndHeight" 
+        ResizeMode="NoResize"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown"
+        AllowsTransparency="True"
+        Background="Transparent">
+
+    <Border Background="White" Width="256">
+        <StackPanel Orientation="Vertical">
+            <Viewbox Width="256" Height="48"
+                     Stretch="Uniform" StretchDirection="DownOnly">
+                <local:OutlinedCaption Text="{Binding EventText}"
+                                       FontFamily="Impact" FontSize="40" />
+            </Viewbox>
+            <Border Background="#E8E8E8" Width="256" Height="256">
+                <Image Width="256" Height="256"
+                    Stretch="Uniform"
+                    x:Name="image_gif"
+                    gif:AnimationBehavior.RepeatBehavior="Forever"
+                    gif:AnimationBehavior.SourceUri="/assets/idle.gif" />
+            </Border>
+        </StackPanel>
+    </Border>
+
+    <Window.ContextMenu>
+        <ContextMenu>
+            <MenuItem Header="Close" Click="ExitMenuItem_Click" />
+        </ContextMenu>
+    </Window.ContextMenu>
+</Window>
