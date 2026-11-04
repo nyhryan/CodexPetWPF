@@ -1,0 +1,158 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PreModelRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostModelRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "Interrupt": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "& \"C:\\Users\\SSAFY\\Desktop\\CodexPet\\CodexPet.Hook\\bin\\Debug\\net10.0\\CodexPet.Hook.exe\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ]
+  }
+}

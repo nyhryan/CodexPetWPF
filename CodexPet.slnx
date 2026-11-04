@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="CodexPet.App/CodexPet.App.csproj" Id="17861145-cdae-4aad-b0e9-583c47d3392c" />
+  <Project Path="CodexPet.Hook/CodexPet.Hook.csproj" Id="3ec9954d-e5d0-474c-bdba-f49987f18ca2" />
+  <Project Path="CodexPet.Tests/CodexPet.Tests.csproj" />
+</Solution>
