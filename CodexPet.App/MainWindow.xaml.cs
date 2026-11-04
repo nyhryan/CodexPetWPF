@@ -74,7 +74,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return Dispatcher.InvokeAsync(
             () =>
             {
-                Debug.WriteLine($"이벤트 수신: {hookEvent.EventName}");
+                Console.Out.WriteLine($"이벤트 수신: {hookEvent.EventName}");
 
                 if (_state.Apply(hookEvent))
                 {

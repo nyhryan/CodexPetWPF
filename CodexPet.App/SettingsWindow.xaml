@@ -31,7 +31,22 @@
                     <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Content="추가" Click="AddText_Click" Padding="10,4" Margin="8,0,0,0" />
-                            <TextBox x:Name="CaptionInput" VerticalContentAlignment="Center" />
+                            <Grid>
+                                <TextBox x:Name="CaptionInput" VerticalContentAlignment="Center" />
+                                <TextBlock Text="상태 문구" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                           VerticalAlignment="Center" Margin="4,0" IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=CaptionInput}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
                         </DockPanel>
                         <Button Content="선택 삭제" Click="DeleteText_Click" Padding="10,4" HorizontalAlignment="Left" Margin="0,8,0,0" />
                     </StackPanel>
