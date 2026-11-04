@@ -23,6 +23,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _serverTask;
     private readonly PetState _state = new();
+    private PetSettings _settings = PetSettings.Load();
+    private SettingsWindow? _settingsWindow;
 
     private bool _isClosing;
     private bool _canClose;
@@ -46,8 +48,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public MainWindow()
     {
         InitializeComponent();
-        EventText = _state.Text;
         DataContext = this;
+        UpdateDisplay();
 
         _serverTask = Task.Run(RunServerAsync);
         Closing += Window_Closing;
@@ -76,9 +78,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
                 if (_state.Apply(hookEvent))
                 {
-                    Title = _state.Text;
-                    EventText = _state.Text;
-                    ChangeGif(_state.Gif);
+                    UpdateDisplay();
                 }
             },
             DispatcherPriority.Normal,
@@ -86,17 +86,58 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ).Task;
     }
 
-    private void ChangeGif(string fileName)
+    private void UpdateDisplay()
     {
-        if (Uri.TryCreate($"pack://application:,,,/assets/{fileName}", UriKind.Absolute, out var gifFile))
+        var candidates = _settings.Values[_state.Key];
+        string image = candidates.Images[Random.Shared.Next(candidates.Images.Count)];
+        string text = candidates.Texts[Random.Shared.Next(candidates.Texts.Count)];
+        EventText = string.IsNullOrWhiteSpace(text) ? string.Empty : text;
+        Title = EventText;
+        try
         {
-            AnimationBehavior.SetSourceUri(image_gif, gifFile);
+            AnimationBehavior.SetSourceUri(image_gif, null);
+            image_gif.Source = null;
+            if (image.StartsWith("asset:"))
+                AnimationBehavior.SetSourceUri(image_gif, new Uri($"pack://application:,,,/assets/{_state.Key}"));
+            else if (PetSettings.ValidateImage(image))
+                AnimationBehavior.SetSourceUri(image_gif, new Uri(image, UriKind.Absolute));
+            else
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.UriSource = new Uri(image, UriKind.Absolute);
+                bitmap.EndInit();
+                image_gif.Source = bitmap;
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"파일 {fileName}을 찾을 수 없습니다.");
-            DiagnosticLog.Write("app", $"파일 {fileName}을 찾을 수 없습니다.");
+            var name = PetSettings.States.First(s => s.Key == _state.Key).Name;
+            _settings.Warnings.Add($"{name}: 이미지를 읽을 수 없어 기본 이미지를 사용합니다. {ex.Message}");
+            AnimationBehavior.SetSourceUri(image_gif, null);
+            image_gif.Source = null;
+            AnimationBehavior.SetSourceUri(image_gif, new Uri($"pack://application:,,,/assets/{_state.Key}"));
         }
+    }
+
+    private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (_settingsWindow is not null)
+        {
+            _settingsWindow.Activate();
+            return;
+        }
+        _settingsWindow = new SettingsWindow(_settings, settings =>
+        {
+            var before = _settings.Values[_state.Key];
+            var after = settings.Values[_state.Key];
+            bool changed = !before.Images.SequenceEqual(after.Images) || !before.Texts.SequenceEqual(after.Texts);
+            _settings = settings;
+            if (changed) UpdateDisplay();
+        }) { Owner = this };
+        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        _settingsWindow.Show();
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

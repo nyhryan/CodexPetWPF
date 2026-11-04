@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.IO;
 using CodexPet.App;
 
 var state = new PetState();
@@ -53,6 +54,68 @@ foreach (var (json, gif, changed) in events)
 }
 
 Console.WriteLine($"Passed {events.Length} consecutive event checks.");
+
+Exception? settingsError = null;
+var settingsThread = new Thread(() =>
+{
+    string directory = Path.Combine(Path.GetTempPath(), "CodexPet-tests-" + Guid.NewGuid().ToString("N"));
+    try
+    {
+        Directory.CreateDirectory(directory);
+        string source = Path.Combine(directory, "source.png");
+        var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(1, 1, 96, 96,
+            System.Windows.Media.PixelFormats.Bgra32, null, new byte[] { 0, 0, 0, 255 }, 4);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using (var stream = File.Create(source)) encoder.Save(stream);
+
+        var settings = new PetSettings(Path.Combine(directory, "settings"));
+        var edit = settings.Copy();
+        edit.Values["idle.gif"].Images.Add(source);
+        edit.Values["idle.gif"].Texts = ["안녕 lower", "", "   "];
+        if (settings.Values["idle.gif"].Images.Count != 1) throw new Exception("Editing changed the live settings.");
+        edit.Save();
+        File.Delete(source);
+        var loaded = PetSettings.Load(edit.DirectoryPath);
+        if (loaded.Values["idle.gif"].Images.Count != 2 || !File.Exists(loaded.Values["idle.gif"].Images[1]) ||
+            !loaded.Values["idle.gif"].Texts.SequenceEqual(new[] { "안녕 lower", "", "   " }))
+            throw new Exception("Saved settings or image copy did not survive reload.");
+
+        File.Delete(loaded.Values["idle.gif"].Images[1]);
+        loaded = PetSettings.Load(edit.DirectoryPath);
+        if (loaded.Values["idle.gif"].Images[1] != "asset:idle.gif" || loaded.Warnings.Count == 0 ||
+            loaded.Values["idle.gif"].Texts[0] != "안녕 lower")
+            throw new Exception("Missing image recovery did not preserve valid text.");
+        var failedEdit = loaded.Copy();
+        failedEdit.Values["idle.gif"].Images.Add(Path.Combine(directory, "missing.png"));
+        try { failedEdit.Save(); throw new Exception("A missing image was saved."); }
+        catch (IOException) { }
+        if (failedEdit.Values["idle.gif"].Images.Count != 3 || PetSettings.Load(edit.DirectoryPath).Values["idle.gif"].Images.Count != 2)
+            throw new Exception("Failed save changed the editing or persisted settings.");
+
+        string settingsFile = Path.Combine(edit.DirectoryPath, "settings.json");
+        var json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(settingsFile))!;
+        json["idle.gif"]!["Images"] = "invalid";
+        File.WriteAllText(settingsFile, json.ToJsonString());
+        var partial = PetSettings.Load(edit.DirectoryPath);
+        if (!partial.Values["idle.gif"].Images.SequenceEqual(new[] { "asset:idle.gif" }) ||
+            partial.Values["idle.gif"].Texts[0] != "안녕 lower" || partial.Warnings.Count == 0)
+            throw new Exception("Corrupt image settings did not preserve valid text.");
+        loaded.Values["receive.gif"].Texts.Clear();
+        try { loaded.Save(); throw new Exception("Empty candidate list was saved."); }
+        catch (InvalidOperationException) { }
+        loaded.Reset("idle.gif");
+        if (!loaded.Values["idle.gif"].Texts.SequenceEqual(new[] { "AURA FARMING" }))
+            throw new Exception("Reset did not restore defaults.");
+    }
+    catch (Exception ex) { settingsError = ex; }
+    finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+});
+settingsThread.SetApartmentState(ApartmentState.STA);
+settingsThread.Start();
+settingsThread.Join();
+if (settingsError is not null) throw new Exception("Settings checks failed.", settingsError);
+Console.WriteLine("Passed settings persistence and recovery checks.");
 
 Exception? captionError = null;
 var captionThread = new Thread(() =>

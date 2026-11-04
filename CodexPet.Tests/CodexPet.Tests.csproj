@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="..\CodexPet.App\HookEvent.cs" Link="HookEvent.cs" />
     <Compile Include="..\CodexPet.App\PetState.cs" Link="PetState.cs" />
+    <Compile Include="..\CodexPet.App\PetSettings.cs" Link="PetSettings.cs" />
     <Compile Include="..\CodexPet.App\OutlinedCaption.cs" Link="OutlinedCaption.cs" />
     <Compile Include="..\CodexPet.App\PetPipeServer.cs" Link="PetPipeServer.cs" />
     <Compile Include="..\CodexPet.Shared\DiagnosticLog.cs" Link="DiagnosticLog.cs" />

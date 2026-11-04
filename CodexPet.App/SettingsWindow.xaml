@@ -1,0 +1,43 @@
+<Window x:Class="CodexPet.App.SettingsWindow" x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="설정" Width="640" Height="600" MinWidth="520" MinHeight="480"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="전체 초기화" Click="ResetAll_Click" Padding="12,6" Margin="0,0,16,0" />
+            <Button Content="저장" Click="Save_Click" Padding="18,6" Margin="0,0,8,0" IsDefault="True" />
+            <Button Content="취소" Click="Cancel_Click" Padding="18,6" IsCancel="True" />
+        </StackPanel>
+        <TextBlock x:Name="WarningsText" DockPanel.Dock="Top" TextWrapping="Wrap" Foreground="DarkRed" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="상태" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox x:Name="StatePicker" Width="180" DisplayMemberPath="Name" SelectionChanged="StatePicker_SelectionChanged" />
+            <Button Content="이 상태 초기화" Click="ResetState_Click" Padding="10,4" Margin="12,0,0,0" />
+        </StackPanel>
+        <Grid>
+            <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+            <GroupBox Header="이미지 후보" Margin="0,0,0,8">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="이미지 추가..." Click="AddImage_Click" Padding="10,4" Margin="0,0,8,0" />
+                        <Button Content="선택 삭제" Click="DeleteImage_Click" Padding="10,4" />
+                    </StackPanel>
+                    <ListBox x:Name="ImagesList" />
+                </DockPanel>
+            </GroupBox>
+            <GroupBox Header="문구 후보" Grid.Row="1">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="추가" Click="AddText_Click" Padding="10,4" Margin="8,0,0,0" />
+                            <TextBox x:Name="CaptionInput" VerticalContentAlignment="Center" />
+                        </DockPanel>
+                        <Button Content="선택 삭제" Click="DeleteText_Click" Padding="10,4" HorizontalAlignment="Left" Margin="0,8,0,0" />
+                    </StackPanel>
+                    <ListBox x:Name="TextsList" />
+                </DockPanel>
+            </GroupBox>
+        </Grid>
+    </DockPanel>
+</Window>
