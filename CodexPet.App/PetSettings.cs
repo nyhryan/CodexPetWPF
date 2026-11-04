@@ -17,7 +17,7 @@ internal sealed class PetSettings
         ("idle.gif", "대기", "AURA FARMING"),
         ("receive.gif", "의뢰 확인", "CHAT WHAT IS THIS"),
         ("thinking.gif", "생각 중", "LOWKEY COOKING RN"),
-        ("working.gif", "작업 중", "LOCKED IN FR"),
+        ("working.gif", "작업 중", "LOCKED IN"),
         ("waiting-permission.gif", "허락 대기", "JUST HIT APPROVE")
     ];
 
