@@ -8,5 +8,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CodexPet.App\CodexPet.App.csproj" />
+    <ProjectReference Include="..\CodexPet.Install\CodexPet.Install.csproj" />
   </ItemGroup>
 </Project>

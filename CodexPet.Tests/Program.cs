@@ -55,6 +55,26 @@ foreach (var (json, gif, changed) in events)
 
 Console.WriteLine($"Passed {events.Length} consecutive event checks.");
 
+InstallationChecks.Run();
+
+string logTestDirectory = Path.Combine(Path.GetTempPath(), "CodexPet-log-tests-" + Guid.NewGuid().ToString("N"));
+try
+{
+    Directory.CreateDirectory(logTestDirectory);
+    string legacy = Path.Combine(logTestDirectory, "app.log");
+    File.WriteAllText(legacy, "legacy session ID");
+    string current = Path.Combine(logTestDirectory, "v2");
+    for (int i = 0; i < 900; i++)
+        CodexPet.DiagnosticLog.Write("app", new string('x', 1000), current);
+    string[] files = Directory.GetFiles(current);
+    if (files.Length != 3 || files.Any(path => new FileInfo(path).Length > 256 * 1024) ||
+        File.ReadAllText(legacy) != "legacy session ID")
+        throw new Exception($"Log rotation or legacy log preservation failed: {string.Join(", ", files.Select(path => Path.GetFileName(path) + ":" + new FileInfo(path).Length))}.");
+    CodexPet.DiagnosticLog.Write("app", "test failure", legacy);
+}
+finally { if (Directory.Exists(logTestDirectory)) Directory.Delete(logTestDirectory, true); }
+Console.WriteLine("Passed log size, rotation, legacy preservation and write failure checks.");
+
 Exception? settingsError = null;
 var settingsThread = new Thread(() =>
 {
