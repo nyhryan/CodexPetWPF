@@ -23,7 +23,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _serverTask;
     private readonly PetState _state = new();
-    private PetSettings _settings = PetSettings.Load();
+    private PetSettings _settings;
     private SettingsWindow? _settingsWindow;
 
     private bool _isClosing;
@@ -45,8 +45,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public MainWindow()
+    public MainWindow() : this(PetSettings.Load()) { }
+
+    internal MainWindow(PetSettings settings)
     {
+        _settings = settings;
         InitializeComponent();
         DataContext = this;
         UpdateDisplay();
@@ -89,35 +92,39 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void UpdateDisplay()
     {
         var candidates = _settings.Values[_state.Key];
-        string image = candidates.Images[Random.Shared.Next(candidates.Images.Count)];
         string text = candidates.Texts[Random.Shared.Next(candidates.Texts.Count)];
         EventText = string.IsNullOrWhiteSpace(text) ? string.Empty : text;
         Title = EventText;
-        try
+        AnimationBehavior.SetSourceUri(image_gif, null);
+        image_gif.Source = null;
+        var images = candidates.Images.ToArray();
+        Random.Shared.Shuffle(images);
+        foreach (string image in images)
         {
-            AnimationBehavior.SetSourceUri(image_gif, null);
-            image_gif.Source = null;
-            if (image.StartsWith("asset:"))
-                AnimationBehavior.SetSourceUri(image_gif, new Uri($"pack://application:,,,/assets/{_state.Key}"));
-            else if (PetSettings.ValidateImage(image))
-                AnimationBehavior.SetSourceUri(image_gif, new Uri(image, UriKind.Absolute));
-            else
+            try
             {
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.UriSource = new Uri(image, UriKind.Absolute);
-                bitmap.EndInit();
-                image_gif.Source = bitmap;
+                if (PetSettings.ValidateImage(image))
+                    AnimationBehavior.SetSourceUri(image_gif, new Uri(image, UriKind.Absolute));
+                else
+                {
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.UriSource = new Uri(image, UriKind.Absolute);
+                    bitmap.EndInit();
+                    image_gif.Source = bitmap;
+                }
+                break;
             }
-        }
-        catch (Exception ex)
-        {
-            var name = PetSettings.States.First(s => s.Key == _state.Key).Name;
-            _settings.Warnings.Add($"{name}: 이미지를 읽을 수 없어 기본 이미지를 사용합니다. {ex.Message}");
-            AnimationBehavior.SetSourceUri(image_gif, null);
-            image_gif.Source = null;
-            AnimationBehavior.SetSourceUri(image_gif, new Uri($"pack://application:,,,/assets/{_state.Key}"));
+            catch (Exception)
+            {
+                var name = PetSettings.States.First(s => s.Key == _state.Key).Name;
+                string warning = $"{name}: 이미지를 읽을 수 없습니다: {image}";
+                if (!_settings.Warnings.Contains(warning)) _settings.Warnings.Add(warning);
+                _settingsWindow?.ShowWarnings(_settings);
+                AnimationBehavior.SetSourceUri(image_gif, null);
+                image_gif.Source = null;
+            }
         }
     }
 

@@ -18,15 +18,10 @@
 
   <ItemGroup>
     <Compile Include="..\CodexPet.Shared\DiagnosticLog.cs" Link="DiagnosticLog.cs" />
-    <None Remove="assets\*.gif" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="XamlAnimatedGif" Version="2.3.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="assets\*.gif" />
   </ItemGroup>
 
 </Project>

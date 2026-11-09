@@ -69,43 +69,76 @@ var settingsThread = new Thread(() =>
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
         using (var stream = File.Create(source)) encoder.Save(stream);
 
+        string gif = Path.Combine(directory, "source.gif");
+        var gifEncoder = new System.Windows.Media.Imaging.GifBitmapEncoder();
+        gifEncoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using (var stream = File.Create(gif)) gifEncoder.Save(stream);
+        string jpeg = Path.Combine(directory, "source.jpg");
+        var jpegEncoder = new System.Windows.Media.Imaging.JpegBitmapEncoder();
+        jpegEncoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using (var stream = File.Create(jpeg)) jpegEncoder.Save(stream);
+
         var settings = new PetSettings(Path.Combine(directory, "settings"));
+        if (settings.Values.Values.Any(value => value.Images.Count != 0) ||
+            settings.Values["working.gif"].Texts.Single() != "LOCKED IN FR")
+            throw new Exception("Fresh settings must have empty images and the specified default texts.");
         var edit = settings.Copy();
         edit.Values["idle.gif"].Images.Add(source);
+        edit.Values["receive.gif"].Images.Add(gif);
+        edit.Values["thinking.gif"].Images.Add(jpeg);
         edit.Values["idle.gif"].Texts = ["안녕 lower", "", "   "];
-        if (settings.Values["idle.gif"].Images.Count != 1) throw new Exception("Editing changed the live settings.");
+        if (settings.Values["idle.gif"].Images.Count != 0) throw new Exception("Editing changed the live settings.");
         edit.Save();
         File.Delete(source);
+        File.Delete(gif);
+        File.Delete(jpeg);
         var loaded = PetSettings.Load(edit.DirectoryPath);
-        if (loaded.Values["idle.gif"].Images.Count != 2 || !File.Exists(loaded.Values["idle.gif"].Images[1]) ||
+        if (loaded.Values["idle.gif"].Images.Count != 1 || !File.Exists(loaded.Values["idle.gif"].Images[0]) ||
             !loaded.Values["idle.gif"].Texts.SequenceEqual(new[] { "안녕 lower", "", "   " }))
             throw new Exception("Saved settings or image copy did not survive reload.");
+        if (!PetSettings.ValidateImage(loaded.Values["receive.gif"].Images.Single()) ||
+            PetSettings.ValidateImage(loaded.Values["thinking.gif"].Images.Single()))
+            throw new Exception("Saved GIF and JPEG copies did not survive reload.");
 
-        File.Delete(loaded.Values["idle.gif"].Images[1]);
+        string copy = loaded.Values["idle.gif"].Images[0];
+        string settingsFile = Path.Combine(edit.DirectoryPath, "settings.json");
+        var json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(settingsFile))!;
+        json["idle.gif"]!["Images"] = new System.Text.Json.Nodes.JsonArray("asset:idle.gif", copy, "asset:working.gif");
+        File.WriteAllText(settingsFile, json.ToJsonString());
         loaded = PetSettings.Load(edit.DirectoryPath);
-        if (loaded.Values["idle.gif"].Images[1] != "asset:idle.gif" || loaded.Warnings.Count == 0 ||
+        if (!loaded.Values["idle.gif"].Images.SequenceEqual(new[] { copy }) ||
+            loaded.Values["idle.gif"].Texts[0] != "안녕 lower" || loaded.Warnings.Count == 0 || !File.Exists(copy))
+            throw new Exception("Legacy migration did not preserve the user image and text.");
+        loaded.Save();
+        if (File.ReadAllText(settingsFile).Contains("asset:") || PetSettings.Load(edit.DirectoryPath).Warnings.Count != 0)
+            throw new Exception("Legacy images were not removed on save.");
+
+        File.Delete(copy);
+        loaded = PetSettings.Load(edit.DirectoryPath);
+        if (loaded.Values["idle.gif"].Images.Single() != copy || loaded.Warnings.Count == 0 ||
             loaded.Values["idle.gif"].Texts[0] != "안녕 lower")
             throw new Exception("Missing image recovery did not preserve valid text.");
+        loaded.Save();
+        if (loaded.Warnings.Count == 0) throw new Exception("Saving hid an unreadable saved image.");
         var failedEdit = loaded.Copy();
         failedEdit.Values["idle.gif"].Images.Add(Path.Combine(directory, "missing.png"));
         try { failedEdit.Save(); throw new Exception("A missing image was saved."); }
         catch (IOException) { }
-        if (failedEdit.Values["idle.gif"].Images.Count != 3 || PetSettings.Load(edit.DirectoryPath).Values["idle.gif"].Images.Count != 2)
+        if (failedEdit.Values["idle.gif"].Images.Count != 2 || PetSettings.Load(edit.DirectoryPath).Values["idle.gif"].Images.Count != 1)
             throw new Exception("Failed save changed the editing or persisted settings.");
 
-        string settingsFile = Path.Combine(edit.DirectoryPath, "settings.json");
-        var json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(settingsFile))!;
+        json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(settingsFile))!;
         json["idle.gif"]!["Images"] = "invalid";
         File.WriteAllText(settingsFile, json.ToJsonString());
         var partial = PetSettings.Load(edit.DirectoryPath);
-        if (!partial.Values["idle.gif"].Images.SequenceEqual(new[] { "asset:idle.gif" }) ||
+        if (partial.Values["idle.gif"].Images.Count != 0 ||
             partial.Values["idle.gif"].Texts[0] != "안녕 lower" || partial.Warnings.Count == 0)
             throw new Exception("Corrupt image settings did not preserve valid text.");
         loaded.Values["receive.gif"].Texts.Clear();
         try { loaded.Save(); throw new Exception("Empty candidate list was saved."); }
         catch (InvalidOperationException) { }
         loaded.Reset("idle.gif");
-        if (!loaded.Values["idle.gif"].Texts.SequenceEqual(new[] { "AURA FARMING" }))
+        if (loaded.Values["idle.gif"].Images.Count != 0 || !loaded.Values["idle.gif"].Texts.SequenceEqual(new[] { "AURA FARMING" }))
             throw new Exception("Reset did not restore defaults.");
     }
     catch (Exception ex) { settingsError = ex; }
@@ -158,6 +191,62 @@ var captionThread = new Thread(() =>
             if (outline.Pen.LineJoin != System.Windows.Media.PenLineJoin.Round)
                 throw new Exception($"Unexpected outline join for {text}.");
         }
+
+        // Instantiate the real widget with a new, isolated settings directory and
+        // a working directory that contains no personal assets.
+        string isolated = Path.Combine(Path.GetTempPath(), "CodexPet-widget-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(isolated);
+        string previousDirectory = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = isolated;
+            var fresh = PetSettings.Load(Path.Combine(isolated, "settings"));
+            var window = new MainWindow(fresh);
+            window.Show();
+            var image = (System.Windows.Controls.Image)window.FindName("image_gif");
+            if (window.EventText != "AURA FARMING" || image.Source is not null)
+                throw new Exception("Fresh widget did not display an empty idle state.");
+            var stateField = typeof(MainWindow).GetField("_state", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            var update = typeof(MainWindow).GetMethod("UpdateDisplay", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            var windowState = (PetState)stateField.GetValue(window)!;
+            windowState.Apply(new HookEvent { EventName = "PreToolUse" });
+            update.Invoke(window, null);
+            if (window.EventText != "LOCKED IN FR" || image.Source is not null)
+                throw new Exception("Empty working state did not display its default text.");
+
+            string valid = Path.Combine(isolated, "valid.png");
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(System.Windows.Media.Imaging.BitmapSource.Create(
+                1, 1, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, new byte[] { 0, 0, 0, 255 }, 4)));
+            using (var stream = File.Create(valid)) encoder.Save(stream);
+            fresh.Values["working.gif"].Images.Add(Path.Combine(isolated, "missing.png"));
+            update.Invoke(window, null);
+            if (image.Source is not null || fresh.Warnings.Count == 0)
+                throw new Exception("An unreadable image did not leave an empty area and report a warning.");
+            fresh.Values["working.gif"].Images.Add(valid);
+            for (int i = 0; i < 20; i++)
+            {
+                update.Invoke(window, null);
+                if (image.Source is null) throw new Exception("A valid image was not selected after an unreadable candidate.");
+            }
+            var menu = typeof(MainWindow).GetMethod("SettingsMenuItem_Click", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            menu.Invoke(window, new object?[] { window, new System.Windows.RoutedEventArgs() });
+            var settingsWindow = (System.Windows.Window)typeof(MainWindow).GetField("_settingsWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(window)!;
+            if (settingsWindow.FindName("WarningsText") is not System.Windows.Controls.TextBlock warnings || string.IsNullOrEmpty(warnings.Text))
+                throw new Exception("The settings window did not report an unreadable image.");
+            settingsWindow.Close();
+            window.Close();
+            var frame = new System.Windows.Threading.DispatcherFrame();
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+            timer.Start();
+            System.Windows.Threading.Dispatcher.PushFrame(frame);
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousDirectory;
+            Directory.Delete(isolated, true);
+        }
         app.Shutdown();
     }
     catch (Exception ex)
@@ -169,7 +258,7 @@ captionThread.SetApartmentState(ApartmentState.STA);
 captionThread.Start();
 captionThread.Join();
 if (captionError is not null) throw new Exception("Caption layout failed.", captionError);
-Console.WriteLine("Passed caption layout checks without opening a window.");
+Console.WriteLine("Passed caption layout and isolated widget checks.");
 
 if (args.Contains("--integration"))
     await PipeIntegration.RunAsync();

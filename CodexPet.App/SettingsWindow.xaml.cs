@@ -17,7 +17,7 @@ internal partial class SettingsWindow : Window
         InitializeComponent();
         _editing = settings.Copy();
         _apply = apply;
-        WarningsText.Text = string.Join("\n", _editing.Warnings.Distinct());
+        ShowWarnings(settings);
         StatePicker.ItemsSource = PetSettings.States.Select(s => new StateChoice(s.Key, s.Name)).ToArray();
         StatePicker.SelectedIndex = 0;
     }
@@ -25,8 +25,13 @@ internal partial class SettingsWindow : Window
     private void RefreshLists()
     {
         var state = _editing.Values[CurrentKey];
-        ImagesList.ItemsSource = state.Images.Select(path => path.StartsWith("asset:") ? "기본 이미지 (" + path[6..] + ")" : Path.GetFileName(path)).ToArray();
+        ImagesList.ItemsSource = state.Images.Select(Path.GetFileName).ToArray();
         TextsList.ItemsSource = state.Texts.Select(text => string.IsNullOrWhiteSpace(text) ? (text.Length == 0 ? "(빈 문구)" : "(공백 문구)") : text).ToArray();
+    }
+
+    public void ShowWarnings(PetSettings settings)
+    {
+        WarningsText.Text = string.Join("\n", settings.Warnings.Distinct());
     }
 
     private void StatePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
