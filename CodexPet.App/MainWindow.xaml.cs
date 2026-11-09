@@ -67,7 +67,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"파이프 서버 중단: {ex}");
+            Debug.WriteLine($"파이프 서버 중단: {ex.GetType().Name}");
             DiagnosticLog.Write("app", $"Pipe server failed: {ex.GetType().Name}");
         }
     }
@@ -77,8 +77,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return Dispatcher.InvokeAsync(
             () =>
             {
-                Console.Out.WriteLine($"이벤트 수신: {hookEvent.EventName}");
-
                 if (_state.Apply(hookEvent))
                 {
                     UpdateDisplay();
@@ -172,7 +170,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"서버 종료 중 오류: {ex}");
+            Debug.WriteLine($"서버 종료 중 오류: {ex.GetType().Name}");
         }
         finally
         {

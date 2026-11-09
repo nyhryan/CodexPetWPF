@@ -10,9 +10,6 @@ public sealed class HookEvent
     [JsonPropertyName("hook_event_name")]
     public string? EventName {  get; set; }
 
-    [JsonPropertyName("session_id")]
-    public string? SessionId { get; set; }
-
     [JsonPropertyName("source")]
     public string? Source { get; set; }
 

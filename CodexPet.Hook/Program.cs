@@ -1,55 +1,64 @@
-﻿using System.Diagnostics;
 using System.IO.Pipes;
-using CodexPet;
 using System.Text;
 using System.Text.Json;
-
-string? eventName = null;
-string? sessionId = null;
-DiagnosticLog.Write("hook", "Hook started");
+using CodexPet;
 
 try
 {
-    // Codex가 표준입력으로 전달한 이벤트
-    string input = await Console.In.ReadToEndAsync();
-
-    // 여러 줄 JSON이 들어와도 한 줄로 정규화
-    using var document = JsonDocument.Parse(input);
-    if (document.RootElement.ValueKind == JsonValueKind.Object)
+    const int maxInputBytes = 1024 * 1024;
+    using var input = Console.OpenStandardInput();
+    using var buffer = new MemoryStream();
+    byte[] chunk = new byte[8192];
+    using var inputTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+    while (true)
     {
-        if (document.RootElement.TryGetProperty("hook_event_name", out var eventProperty) && eventProperty.ValueKind == JsonValueKind.String)
-            eventName = eventProperty.GetString();
-        if (document.RootElement.TryGetProperty("session_id", out var sessionProperty) && sessionProperty.ValueKind == JsonValueKind.String)
-            sessionId = sessionProperty.GetString();
+        int count = await input.ReadAsync(chunk, inputTimeout.Token).AsTask().WaitAsync(inputTimeout.Token);
+        if (count == 0) break;
+        if (buffer.Length + count > maxInputBytes)
+        {
+            DiagnosticLog.Write("hook", "Input exceeded size limit");
+            return 0;
+        }
+        buffer.Write(chunk, 0, count);
     }
-    DiagnosticLog.Write("hook", "Event read from stdin", eventName, sessionId);
-    string json = JsonSerializer.Serialize(document.RootElement);
 
-    using var pipe = new NamedPipeClientStream(
-        serverName: ".",             // 현재 컴퓨터
-        pipeName: "CodexPet.Events",
-        direction: PipeDirection.Out,
-        options: PipeOptions.Asynchronous
-    );
+    using var document = JsonDocument.Parse(buffer.ToArray());
+    var root = document.RootElement;
+    if (root.ValueKind != JsonValueKind.Object ||
+        !root.TryGetProperty("hook_event_name", out var property) || property.ValueKind != JsonValueKind.String ||
+        string.IsNullOrWhiteSpace(property.GetString()))
+    {
+        DiagnosticLog.Write("hook", "Input missing event name");
+        return 0;
+    }
 
-    using var deadline =
-        new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+    string? eventName = property.GetString();
+    if (eventName is not ("SessionStart" or "SessionEnd" or "Interrupt" or "Stop" or "UserPromptSubmit" or
+        "PreModelRequest" or "PostModelRequest" or "PreToolUse" or "PostToolUse" or "PermissionRequest"))
+        return 0;
 
-    await pipe.ConnectAsync(
-        timeout: 200,
-        cancellationToken: deadline.Token
-    );
+    string json;
+    if (eventName == "SessionStart")
+    {
+        string? source = root.TryGetProperty("source", out var sourceProperty) && sourceProperty.ValueKind == JsonValueKind.String
+            ? sourceProperty.GetString() : null;
+        // Malformed or unknown sources keep the non-compact behavior without forwarding arbitrary text.
+        json = source is "startup" or "resume" or "clear" or "compact" or "fork"
+            ? JsonSerializer.Serialize(new { hook_event_name = eventName, source })
+            : JsonSerializer.Serialize(new { hook_event_name = eventName });
+    }
+    else
+        json = JsonSerializer.Serialize(new { hook_event_name = eventName });
 
-    byte[] message = Encoding.UTF8.GetBytes(json + "\n");
-    await pipe.WriteAsync(message.AsMemory(), deadline.Token);
-    DiagnosticLog.Write("hook", "Event written to pipe", eventName, sessionId);
+    using var pipe = new NamedPipeClientStream(".", "CodexPet.Events", PipeDirection.Out, PipeOptions.Asynchronous);
+    using var deadline = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+    await pipe.ConnectAsync(200, deadline.Token);
+    await pipe.WriteAsync(Encoding.UTF8.GetBytes(json + "\n"), deadline.Token);
 }
 catch (Exception ex)
 {
-    // 알림 전용 프로그램:
-    // 펫이 꺼져 있거나 전송에 실패해도 Codex 작업은 계속 진행.
-    // 개발 중에는 예외 내용을 별도 로그에 기록.
-    DiagnosticLog.Write("hook", $"Hook failed: {ex.GetType().Name}", eventName, sessionId);
+    // Never include input or exception messages, and never block the Codex task.
+    DiagnosticLog.Write("hook", $"Hook failed: {ex.GetType().Name}");
 }
 
 return 0;
