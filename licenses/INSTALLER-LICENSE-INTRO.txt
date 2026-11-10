@@ -1,0 +1,13 @@
+CodexPet 설치 및 라이선스 안내
+
+CodexPet 소스 코드는 MIT 라이선스로 제공됩니다. 설치 파일에는 Microsoft .NET 런타임, Windows Desktop 구성 요소 및 다른 외부 구성 요소가 포함됩니다. 이 구성 요소에는 각각 별도의 라이선스와 사용·재배포 조건이 적용됩니다.
+
+다음에 제공되는 라이선스와 서드파티 고지를 확인해 주세요. 해당 구성 요소의 사용 및 재배포에는 해당 라이선스의 조건이 적용됩니다. CodexPet은 Microsoft가 제공하거나 보증하는 제품이 아닙니다.
+
+아래에는 CodexPet의 MIT 라이선스와 빌드에 사용한 SDK에서 수집한 Microsoft 약관 및 고지를 제공합니다. Microsoft 사본은 .NET SDK 10.0.403 및 Windows SDK 10.0.19041.0에서 가져왔습니다. Microsoft의 온라인 안내에는 다른 버전의 약관이 있을 수 있습니다.
+
+Microsoft .NET Library License: https://dotnet.microsoft.com/en-us/dotnet_library_license.htm
+Windows SDK License: https://learn.microsoft.com/en-us/legal/windows-sdk/license
+Windows .NET 구성 요소별 라이선스: https://github.com/dotnet/core/blob/main/license-information-windows.md
+
+설치 후에는 설치 폴더의 Licenses 디렉터리에서 이 문서와 다른 고지도 확인할 수 있습니다.

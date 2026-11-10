@@ -9,7 +9,9 @@
         Title="MainWindow" 
         WindowStyle="None" 
         SizeToContent="WidthAndHeight" 
-        ResizeMode="NoResize"
+        ResizeMode="CanMinimize"
+        ShowInTaskbar="False"
+        StateChanged="Window_StateChanged"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"
         AllowsTransparency="True"
         Background="Transparent">
@@ -53,9 +55,15 @@
                         <Setter.Value>
                             <ControlTemplate TargetType="MenuItem">
                                 <Border x:Name="ItemBorder" Background="Transparent" Padding="12,6">
-                                    <ContentPresenter ContentSource="Header" />
+                                    <DockPanel>
+                                        <TextBlock x:Name="CheckMark" DockPanel.Dock="Right" Text="✓" Margin="12,0,0,0" Visibility="Collapsed" />
+                                        <ContentPresenter ContentSource="Header" />
+                                    </DockPanel>
                                 </Border>
                                 <ControlTemplate.Triggers>
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
+                                    </Trigger>
                                     <Trigger Property="IsHighlighted" Value="True">
                                         <Setter TargetName="ItemBorder" Property="Background" Value="#E5E5E5" />
                                     </Trigger>
@@ -66,6 +74,8 @@
                 </Style>
             </ContextMenu.ItemContainerStyle>
             <MenuItem Header="설정" Click="SettingsMenuItem_Click" />
+            <MenuItem x:Name="AlwaysOnTopMenuItem" Header="항상 위에 표시" IsCheckable="True" Click="AlwaysOnTopMenuItem_Click" />
+            <MenuItem Header="트레이로 숨기기" Click="MinimizeMenuItem_Click" />
             <MenuItem Header="종료" Click="ExitMenuItem_Click" />
         </ContextMenu>
     </Window.ContextMenu>

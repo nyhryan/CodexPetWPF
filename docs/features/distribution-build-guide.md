@@ -49,6 +49,7 @@ Get-FileHash -Algorithm SHA256 .\artifacts\setup\CodexPet-Setup-0.1.0-win-x64.ex
 - 직접 참조하는 [XamlAnimatedGif 2.3.2](https://www.nuget.org/packages/XamlAnimatedGif/2.3.2)는 Apache-2.0이다. NuGet 메타데이터의 작성자는 Thomas Levesque이며 해당 패키지 자체에는 별도의 NOTICE 또는 라이선스 파일이 없었다. 배포물에는 구성 요소 출처와 Apache-2.0 사본을 포함한다. 원본 소스의 추가 고지는 공개 전에 확인한다.
 - 실제 게시된 .NET Core 및 Windows Desktop 런타임의 버전을 빌드 출력과 `runtimeconfig.json`에서 확인한다. 빌드는 복원된 해당 런타임 팩의 라이선스와 제공되는 서드파티 고지를 수집한다. 이번 10.0.14 팩의 NuGet 메타데이터와 포함된 라이선스는 각각 MIT를 표시한다. 한편 [.NET의 배포 에셋 라이선스 설명](https://github.com/dotnet/runtime/blob/main/docs/project/licensing-assets.md)은 Windows 제품 배포에 .NET Library License를 명시한다. 실제 획득·배포 구성에 어떤 조건이 적용되는지 공개 전 확인한다. [Microsoft의 .NET Library 조건](https://dotnet.microsoft.com/en-us/dotnet_library_license.htm)은 배포와 최종 사용자 조건에 관한 조항을 포함한다. self-contained 런타임은 PC의 런타임 업데이트로 자동 갱신되지 않는다.
 - Inno Setup 라이선스 사본과 출처를 포함한다. 제작자는 상업적 사용자에게 라이선스 구매를 요청한다. [Inno Setup 안내](https://jrsoftware.org/isinfo.php)
+- 설치 프로그램은 CodexPet MIT와 SDK에서 확보한 Microsoft 참고 약관 등을 표시한다. 무인 설치 시 사용자가 약관을 확인하고 동의한 경우에만 `/ACCEPTLICENSE`를 지정한다. SDK 사본과 실제 런타임에 적용될 정확한 조건의 관계 및 이 동의 방식의 적합성은 [라이선스 검토](distribution-license-review.md)를 따른다.
 - 설치 후 고지는 `%LOCALAPPDATA%\CodexPet\Licenses`에 있다. 변경된 의존성이나 런타임과 고지의 적합성은 최종 배포 전에 다시 확인한다.
 
 릴리스 안내의 작성 틀은 [0.1.0 릴리스 초안](distribution-release-draft.md)을 따른다.

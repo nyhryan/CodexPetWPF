@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows.Media.Imaging;
 
 namespace CodexPet.App;
@@ -23,6 +24,7 @@ internal sealed class PetSettings
 
     public Dictionary<string, StateSettings> Values { get; } = new();
     public List<string> Warnings { get; } = new();
+    public bool AlwaysOnTop { get; set; }
     public string DirectoryPath { get; }
 
     public PetSettings(string? directoryPath = null)
@@ -39,7 +41,7 @@ internal sealed class PetSettings
 
     public PetSettings Copy()
     {
-        var copy = new PetSettings(DirectoryPath);
+        var copy = new PetSettings(DirectoryPath) { AlwaysOnTop = AlwaysOnTop };
         foreach (var (key, value) in Values)
             copy.Values[key] = new StateSettings { Images = [.. value.Images], Texts = [.. value.Texts] };
         copy.Warnings.AddRange(Warnings);
@@ -63,6 +65,13 @@ internal sealed class PetSettings
         try
         {
             using var document = JsonDocument.Parse(File.ReadAllText(path));
+            if (document.RootElement.TryGetProperty("AlwaysOnTop", out var alwaysOnTop))
+            {
+                if (alwaysOnTop.ValueKind is JsonValueKind.True or JsonValueKind.False)
+                    settings.AlwaysOnTop = alwaysOnTop.GetBoolean();
+                else
+                    settings.Warnings.Add("항상 위에 표시 설정을 읽을 수 없어 꺼짐을 사용합니다.");
+            }
             foreach (var state in States)
             {
                 JsonElement value;
@@ -157,7 +166,9 @@ internal sealed class PetSettings
         }
         string path = Path.Combine(DirectoryPath, "settings.json");
         string temporary = path + ".tmp";
-        File.WriteAllText(temporary, JsonSerializer.Serialize(saved.Values, new JsonSerializerOptions { WriteIndented = true }));
+        var document = JsonSerializer.SerializeToNode(saved.Values)!.AsObject();
+        document["AlwaysOnTop"] = AlwaysOnTop;
+        File.WriteAllText(temporary, document.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         File.Move(temporary, path, true);
         foreach (var state in States) Values[state.Key] = saved.Values[state.Key];
         Warnings.Clear();
@@ -165,5 +176,18 @@ internal sealed class PetSettings
             foreach (string image in Values[state.Key].Images)
                 try { ValidateImage(image); }
                 catch (Exception) { Warnings.Add($"{state.Name}: 이미지를 읽을 수 없습니다: {image}"); }
+    }
+
+    public void SaveAlwaysOnTop()
+    {
+        Directory.CreateDirectory(DirectoryPath);
+        string path = Path.Combine(DirectoryPath, "settings.json");
+        var document = File.Exists(path)
+            ? JsonNode.Parse(File.ReadAllText(path))?.AsObject() ?? throw new InvalidDataException("설정 파일이 비어 있습니다.")
+            : JsonSerializer.SerializeToNode(Values)!.AsObject();
+        document["AlwaysOnTop"] = AlwaysOnTop;
+        string temporary = path + ".tmp";
+        File.WriteAllText(temporary, document.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        File.Move(temporary, path, true);
     }
 }

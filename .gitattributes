@@ -1,0 +1,5 @@
+# Preserve the vendor-supplied license and notice files byte for byte.
+licenses/Microsoft-Windows-SDK-10.0.19041-LICENSE.rtf binary
+licenses/Microsoft-Windows-SDK-10.0.19041-THIRD-PARTY-NOTICES.rtf binary
+licenses/Microsoft-WindowsDesktop-SDK-10.0.403-THIRD-PARTY-NOTICES.txt binary
+licenses/Microsoft-dotnet-SDK-10.0.403-LICENSE.txt binary

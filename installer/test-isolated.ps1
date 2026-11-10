@@ -14,18 +14,22 @@ try {
     if ($LASTEXITCODE -ne 0) { throw '시험용 설치 파일 컴파일 실패' }
     $setup = Join-Path $root 'artifacts\setup\CodexPet-isolated-test.exe'
     $before = Get-Content -Raw -Encoding UTF8 $config
+    $noConsent = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-') -Wait -PassThru -WindowStyle Hidden
+    if ($noConsent.ExitCode -eq 0 -or (Test-Path -LiteralPath $appDir) -or (Get-Content -Raw -Encoding UTF8 $config) -ne $before) {
+        throw '라이선스 명시 동의 없이 무인 설치가 진행되었습니다.'
+    }
     $wrongPath = Join-Path $testRoot 'wrong-location'
-    $wrong = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-', ('/DIR="' + $wrongPath + '"')) -Wait -PassThru -WindowStyle Hidden
+    $wrong = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/ACCEPTLICENSE', ('/DIR="' + $wrongPath + '"')) -Wait -PassThru -WindowStyle Hidden
     if ($wrong.ExitCode -eq 0 -or (Test-Path -LiteralPath $wrongPath) -or (Get-Content -Raw -Encoding UTF8 $config) -ne $before) {
         throw '고정 설치 위치가 아닌 경로를 허용했습니다.'
     }
     $lock = [IO.File]::Open($config, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
     try {
-        $failed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-') -Wait -PassThru -WindowStyle Hidden
+        $failed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/ACCEPTLICENSE') -Wait -PassThru -WindowStyle Hidden
         if ($failed.ExitCode -ne 10) { throw "등록 실패 종료 코드 오류: $($failed.ExitCode)" }
     } finally { $lock.Dispose() }
     if ((Get-Content -Raw -Encoding UTF8 $config) -ne $before) { throw '등록 실패가 기존 설정을 변경했습니다.' }
-    $installed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-') -Wait -PassThru -WindowStyle Hidden
+    $installed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/ACCEPTLICENSE') -Wait -PassThru -WindowStyle Hidden
     if ($installed.ExitCode -ne 0) { throw "설치 실패: $($installed.ExitCode)" }
     foreach ($project in @('App', 'Hook', 'Install')) {
         $directory = if ($project -eq 'Install') { 'Installer' } else { $project }
@@ -37,6 +41,17 @@ try {
     if (Get-ChildItem -LiteralPath $appDir -Recurse -File | Where-Object { $_.Extension -in @('.gif', '.pdb') }) {
         throw '설치 파일에 GIF 또는 디버그 심볼이 포함되어 있습니다.'
     }
+    foreach ($requiredNotice in @(
+        'CodexPet-Setup-Terms.txt',
+        'Microsoft-dotnet-SDK-10.0.403-LICENSE.txt',
+        'Microsoft-WindowsDesktop-SDK-10.0.403-THIRD-PARTY-NOTICES.txt',
+        'Microsoft-Windows-SDK-10.0.19041-LICENSE.rtf',
+        'Microsoft-Windows-SDK-10.0.19041-THIRD-PARTY-NOTICES.rtf'
+    )) {
+        if (!(Test-Path -LiteralPath (Join-Path (Join-Path $PublishRoot 'Licenses') $requiredNotice))) {
+            throw "게시된 고지를 찾을 수 없습니다: $requiredNotice"
+        }
+    }
     foreach ($license in Get-ChildItem -File -LiteralPath (Join-Path $PublishRoot 'Licenses')) {
         $installedLicense = Join-Path (Join-Path $appDir 'Licenses') $license.Name
         if (!(Test-Path -LiteralPath $installedLicense) -or
@@ -44,7 +59,7 @@ try {
             throw "설치된 라이선스가 원본과 다릅니다: $($license.Name)"
         }
     }
-    $installed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-') -Wait -PassThru -WindowStyle Hidden
+    $installed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/ACCEPTLICENSE') -Wait -PassThru -WindowStyle Hidden
     if ($installed.ExitCode -ne 0) { throw "재설치 실패: $($installed.ExitCode)" }
     $json = Get-Content -Raw -Encoding UTF8 $config | ConvertFrom-Json
     if ($json.description -ne 'preserved' -or $json.hooks.Stop.Count -ne 2) { throw '기존 훅이 변경되었거나 중복되었습니다.' }
@@ -75,7 +90,7 @@ try {
     }
     & $InnoCompiler '/Qp' ('/DTestRoot=' + $testRoot) ('/DPublishRoot=' + $PublishRoot) '/DTestDeleteData' 'installer\CodexPet.iss'
     if ($LASTEXITCODE -ne 0) { throw '삭제 선택 시험 설치 파일 컴파일 실패' }
-    $installed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-') -Wait -PassThru -WindowStyle Hidden
+    $installed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/ACCEPTLICENSE') -Wait -PassThru -WindowStyle Hidden
     if ($installed.ExitCode -ne 0) { throw "삭제 선택 시험 설치 실패: $($installed.ExitCode)" }
     'owned image' | Set-Content -Encoding UTF8 (Join-Path $appDir 'images\0123456789abcdef0123456789abcdef.png')
     'owned image with unusual extension' | Set-Content -Encoding UTF8 (Join-Path $appDir 'images\123456789abcdef0123456789abcdef0.data')

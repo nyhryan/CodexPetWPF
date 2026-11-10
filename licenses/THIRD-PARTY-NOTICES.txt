@@ -6,9 +6,25 @@ Licensed under the Apache License, Version 2.0; see XamlAnimatedGif-Apache-2.0.t
 
 Microsoft .NET runtime and Windows Desktop runtime
 https://dotnet.microsoft.com/
-See the accompanying Microsoft.NETCore.App and Microsoft.WindowsDesktop.App
-license and third-party notices files. The actual versions are recorded by the
-build process in the published runtimeconfig.json files.
+The actual versions are recorded by the build process in the published
+runtimeconfig.json files. The accompanying runtime-pack license files contain
+MIT text and the .NET Core runtime pack supplies third-party notices.
+Microsoft describes additional terms for certain Windows binaries:
+https://github.com/dotnet/core/blob/main/license-information-windows.md
+The .NET Library License covers, among others, coreclr.dll and WPF native
+components according to that description:
+https://dotnet.microsoft.com/en-us/dotnet_library_license.htm
+Microsoft identifies D3DCompiler_47_cor3.dll as subject to the Windows SDK
+License: https://learn.microsoft.com/en-us/legal/windows-sdk/license
+The WPF repository also publishes third-party notices:
+https://github.com/dotnet/wpf/blob/main/THIRD-PARTY-NOTICES.TXT
+
+For offline reference, this package includes unmodified license and notice
+files copied from .NET SDK 10.0.403 and Windows SDK 10.0.19041 on the build
+system. These are identified by version in their filenames. The SDK documents
+are reference copies, not a determination that they are the exact license or
+notice versions applicable to each bundled .NET 10.0.14 runtime binary. The
+online Microsoft license terms linked above may differ from these copies.
 
 The installer was built using Inno Setup, copyright Jordan Russell and
 contributors. See Inno-Setup.txt and https://jrsoftware.org/.

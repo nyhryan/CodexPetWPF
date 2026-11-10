@@ -9,13 +9,15 @@ internal partial class SettingsWindow : Window
 {
     private readonly PetSettings _editing;
     private readonly Action<PetSettings> _apply;
+    private readonly Func<bool> _getAlwaysOnTop;
     private string CurrentKey => ((StateChoice)StatePicker.SelectedItem).Key;
     private sealed record StateChoice(string Key, string Name);
 
-    public SettingsWindow(PetSettings settings, Action<PetSettings> apply)
+    public SettingsWindow(PetSettings settings, Func<bool> getAlwaysOnTop, Action<PetSettings> apply)
     {
         InitializeComponent();
         _editing = settings.Copy();
+        _getAlwaysOnTop = getAlwaysOnTop;
         _apply = apply;
         ShowWarnings(settings);
         StatePicker.ItemsSource = PetSettings.States.Select(s => new StateChoice(s.Key, s.Name)).ToArray();
@@ -95,6 +97,7 @@ internal partial class SettingsWindow : Window
     {
         try
         {
+            _editing.AlwaysOnTop = _getAlwaysOnTop();
             _editing.Save();
             _apply(_editing);
             Close();

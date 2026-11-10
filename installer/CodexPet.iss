@@ -11,6 +11,7 @@
 AppId={{4D6B1288-E743-4C2C-9C60-30BFF4A06383}
 AppName=CodexPet
 AppVersion={#MyAppVersion}
+LicenseFile={#PublishRoot}\Licenses\CodexPet-Setup-Terms.txt
 #ifdef TestRoot
 DefaultDirName={#TestRoot}\CodexPet
 CreateUninstallRegKey=no
@@ -72,10 +73,20 @@ end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
-  ResultCode: Integer;
+  ResultCode, Index: Integer;
   ExpectedPath: String;
+  AcceptedLicense: Boolean;
 begin
   Result := '';
+  if WizardSilent then begin
+    AcceptedLicense := False;
+    for Index := 1 to ParamCount do
+      if CompareText(ParamStr(Index), '/ACCEPTLICENSE') = 0 then AcceptedLicense := True;
+    if not AcceptedLicense then begin
+      Result := '무인 설치에는 라이선스를 확인한 후 /ACCEPTLICENSE를 지정해야 합니다.';
+      exit;
+    end;
+  end;
 #ifdef TestRoot
   ExpectedPath := '{#TestRoot}\CodexPet';
 #else

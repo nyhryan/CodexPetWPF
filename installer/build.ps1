@@ -29,6 +29,32 @@ try {
     Copy-Item -LiteralPath 'LICENSE' -Destination (Join-Path $licenses 'CodexPet-MIT.txt')
     Copy-Item -LiteralPath 'licenses\Apache-2.0.txt' -Destination (Join-Path $licenses 'XamlAnimatedGif-Apache-2.0.txt')
     Copy-Item -LiteralPath 'licenses\THIRD-PARTY-NOTICES.txt' -Destination $licenses
+    foreach ($noticeFile in @(
+        'Microsoft-dotnet-SDK-10.0.403-LICENSE.txt',
+        'Microsoft-WindowsDesktop-SDK-10.0.403-THIRD-PARTY-NOTICES.txt',
+        'Microsoft-Windows-SDK-10.0.19041-LICENSE.rtf',
+        'Microsoft-Windows-SDK-10.0.19041-THIRD-PARTY-NOTICES.rtf'
+    )) {
+        Copy-Item -LiteralPath (Join-Path 'licenses' $noticeFile) -Destination $licenses
+    }
+    Add-Type -AssemblyName System.Windows.Forms
+    $sdkLicense = New-Object System.Windows.Forms.RichTextBox
+    try {
+        $sdkLicense.LoadFile((Resolve-Path -LiteralPath 'licenses\Microsoft-Windows-SDK-10.0.19041-LICENSE.rtf').Path)
+        $setupTerms = @(
+            (Get-Content -Raw -Encoding UTF8 'licenses\INSTALLER-LICENSE-INTRO.txt'),
+            "`r`n========== CodexPet MIT ==========`r`n",
+            (Get-Content -Raw -Encoding UTF8 'LICENSE'),
+            "`r`n========== Microsoft .NET SDK 10.0.403 License ==========`r`n",
+            (Get-Content -Raw -Encoding UTF8 'licenses\Microsoft-dotnet-SDK-10.0.403-LICENSE.txt'),
+            "`r`n========== Microsoft Windows SDK 10.0.19041.0 License ==========`r`n",
+            $sdkLicense.Text,
+            "`r`n========== Third-party notices ==========`r`n",
+            (Get-Content -Raw -Encoding UTF8 'licenses\THIRD-PARTY-NOTICES.txt')
+        ) -join "`r`n"
+        [IO.File]::WriteAllText((Join-Path $licenses 'CodexPet-Setup-Terms.txt'), $setupTerms, [Text.UTF8Encoding]::new($true))
+    }
+    finally { $sdkLicense.Dispose() }
     Copy-Item -LiteralPath (Join-Path (Split-Path -Parent $InnoCompiler) 'license.txt') -Destination (Join-Path $licenses 'Inno-Setup.txt')
     $assets = Get-Content -Raw -Encoding UTF8 'CodexPet.App\obj\project.assets.json' | ConvertFrom-Json
     $packageRoots = @($assets.packageFolders.PSObject.Properties.Name)

@@ -12,6 +12,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using XamlAnimatedGif;
+using Forms = System.Windows.Forms;
 
 namespace CodexPet.App;
 
@@ -25,6 +26,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly PetState _state = new();
     private PetSettings _settings;
     private SettingsWindow? _settingsWindow;
+    private readonly Forms.NotifyIcon _trayIcon;
+    private readonly Forms.ContextMenuStrip _trayMenu;
+    private readonly Forms.ToolStripMenuItem _trayAlwaysOnTop;
+    private readonly System.Drawing.Icon _trayImage;
 
     private bool _isClosing;
     private bool _canClose;
@@ -51,6 +56,35 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         _settings = settings;
         InitializeComponent();
+        Topmost = _settings.AlwaysOnTop;
+        AlwaysOnTopMenuItem.IsChecked = Topmost;
+        using (var stream = typeof(MainWindow).Assembly.GetManifestResourceStream("CodexPet.TrayIcon.ico")!)
+        using (var icon = new System.Drawing.Icon(stream))
+            _trayImage = (System.Drawing.Icon)icon.Clone();
+        _trayAlwaysOnTop = new Forms.ToolStripMenuItem("항상 위에 표시") { CheckOnClick = true, Checked = Topmost };
+        _trayAlwaysOnTop.Click += (_, _) =>
+        {
+            AlwaysOnTopMenuItem.IsChecked = _trayAlwaysOnTop.Checked;
+            AlwaysOnTopMenuItem_Click(AlwaysOnTopMenuItem, new RoutedEventArgs());
+        };
+        _trayMenu = new Forms.ContextMenuStrip();
+        _trayMenu.Items.Add("창 보이기", null, (_, _) => ShowWidget());
+        _trayMenu.Items.Add("설정", null, (_, _) =>
+        {
+            ShowWidget();
+            SettingsMenuItem_Click(this, new RoutedEventArgs());
+        });
+        _trayMenu.Items.Add(_trayAlwaysOnTop);
+        _trayMenu.Items.Add("종료", null, (_, _) => Close());
+        _trayIcon = new Forms.NotifyIcon { Icon = _trayImage, Text = "CodexPet", ContextMenuStrip = _trayMenu, Visible = true };
+        _trayIcon.DoubleClick += (_, _) => ShowWidget();
+        Closed += (_, _) =>
+        {
+            _trayIcon.Visible = false;
+            _trayIcon.Dispose();
+            _trayMenu.Dispose();
+            _trayImage.Dispose();
+        };
         DataContext = this;
         UpdateDisplay();
 
@@ -92,7 +126,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var candidates = _settings.Values[_state.Key];
         string text = candidates.Texts[Random.Shared.Next(candidates.Texts.Count)];
         EventText = string.IsNullOrWhiteSpace(text) ? string.Empty : text;
-        Title = EventText;
+        Title = string.IsNullOrEmpty(EventText) ? "CodexPet" : $"CodexPet - {EventText}";
         AnimationBehavior.SetSourceUri(image_gif, null);
         image_gif.Source = null;
         var images = candidates.Images.ToArray();
@@ -133,7 +167,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _settingsWindow.Activate();
             return;
         }
-        _settingsWindow = new SettingsWindow(_settings, settings =>
+        _settingsWindow = new SettingsWindow(_settings, () => _settings.AlwaysOnTop, settings =>
         {
             var before = _settings.Values[_state.Key];
             var after = settings.Values[_state.Key];
@@ -143,6 +177,48 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }) { Owner = this };
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
+    }
+
+    private void AlwaysOnTopMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        Topmost = AlwaysOnTopMenuItem.IsChecked;
+        _trayAlwaysOnTop.Checked = Topmost;
+        _settings.AlwaysOnTop = Topmost;
+        try
+        {
+            _settings.SaveAlwaysOnTop();
+        }
+        catch (Exception ex)
+        {
+            if (!IsVisible) ShowWidget();
+            MessageBox.Show(_settingsWindow ?? (Window)this,
+                "항상 위에 표시 설정을 저장할 수 없습니다. 현재 선택은 적용되지만 앱을 다시 실행하면 유지되지 않을 수 있습니다.\n" + ex.Message,
+                "저장 오류", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void MinimizeMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        _settingsWindow?.Hide();
+        Hide();
+    }
+
+    private void Window_StateChanged(object? sender, EventArgs e)
+    {
+        if (WindowState != WindowState.Minimized) return;
+        MinimizeMenuItem_Click(this, new RoutedEventArgs());
+        WindowState = WindowState.Normal;
+    }
+
+    private void ShowWidget()
+    {
+        if (!IsVisible) Show();
+        Activate();
+        if (_settingsWindow is not null)
+        {
+            if (!_settingsWindow.IsVisible) _settingsWindow.Show();
+            _settingsWindow.Activate();
+        }
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

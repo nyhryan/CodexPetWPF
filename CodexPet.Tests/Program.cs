@@ -99,7 +99,7 @@ var settingsThread = new Thread(() =>
         using (var stream = File.Create(jpeg)) jpegEncoder.Save(stream);
 
         var settings = new PetSettings(Path.Combine(directory, "settings"));
-        if (settings.Values.Values.Any(value => value.Images.Count != 0) ||
+        if (settings.AlwaysOnTop || settings.Values.Values.Any(value => value.Images.Count != 0) ||
             settings.Values["working.gif"].Texts.Single() != "LOCKED IN FR")
             throw new Exception("Fresh settings must have empty images and the specified default texts.");
         var edit = settings.Copy();
@@ -123,6 +123,26 @@ var settingsThread = new Thread(() =>
         string copy = loaded.Values["idle.gif"].Images[0];
         string settingsFile = Path.Combine(edit.DirectoryPath, "settings.json");
         var json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(settingsFile))!;
+        json.AsObject().Remove("AlwaysOnTop");
+        File.WriteAllText(settingsFile, json.ToJsonString());
+        loaded = PetSettings.Load(edit.DirectoryPath);
+        if (loaded.AlwaysOnTop || loaded.Values["idle.gif"].Texts[0] != "안녕 lower")
+            throw new Exception("Legacy settings must default to not always on top and preserve captions.");
+        var beforeToggle = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(settingsFile))!;
+        loaded.AlwaysOnTop = true;
+        loaded.SaveAlwaysOnTop();
+        var afterToggle = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(settingsFile))!;
+        afterToggle.AsObject().Remove("AlwaysOnTop");
+        if (!System.Text.Json.Nodes.JsonNode.DeepEquals(beforeToggle, afterToggle) || !PetSettings.Load(edit.DirectoryPath).AlwaysOnTop)
+            throw new Exception("Enabling always on top failed to preserve existing settings or persist.");
+        loaded.Reset("idle.gif");
+        if (!loaded.AlwaysOnTop) throw new Exception("Reset changed always on top.");
+        loaded = PetSettings.Load(edit.DirectoryPath);
+        loaded.AlwaysOnTop = false;
+        loaded.SaveAlwaysOnTop();
+        if (PetSettings.Load(edit.DirectoryPath).AlwaysOnTop)
+            throw new Exception("Disabling always on top did not persist.");
+        json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(settingsFile))!;
         json["idle.gif"]!["Images"] = new System.Text.Json.Nodes.JsonArray("asset:idle.gif", copy, "asset:working.gif");
         File.WriteAllText(settingsFile, json.ToJsonString());
         loaded = PetSettings.Load(edit.DirectoryPath);
