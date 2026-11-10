@@ -1,5 +1,7 @@
 # CodexPet
 
+https://github.com/user-attachments/assets/fc4952af-b55e-4ecf-b66d-d03e4c28c07e
+
 CodexPet은 Windows 바탕화면에서 로컬 Codex의 작업 상태를 보여 주는 작은 위젯입니다. 작업을 기다리거나, 생각하거나, 도구를 사용하거나, 허락을 기다릴 때 상태에 맞는 이미지와 문구를 표시합니다.
 
 이미지와 문구는 직접 고를 수 있습니다. 기본 이미지는 포함되어 있지 않으므로, 처음 실행할 때는 문구와 빈 이미지 영역이 보입니다.
