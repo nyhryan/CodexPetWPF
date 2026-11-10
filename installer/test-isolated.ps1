@@ -1,15 +1,16 @@
-param([Parameter(Mandatory)][string]$InnoCompiler)
+﻿param([Parameter(Mandatory)][string]$InnoCompiler, [Parameter(Mandatory)][string]$PublishRoot)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
+    $PublishRoot = (Resolve-Path -LiteralPath $PublishRoot).Path
     $testRoot = Join-Path (Join-Path $root 'artifacts') ('isolated 한글 ' + [Guid]::NewGuid().ToString('N'))
     $appDir = Join-Path $testRoot 'CodexPet'
     $configDir = Join-Path $testRoot 'user\.codex'
     $config = Join-Path $configDir 'hooks.json'
     New-Item -ItemType Directory -Force $configDir | Out-Null
     '{"description":"preserved","hooks":{"Stop":[{"hooks":[{"type":"command","command":"other"}]}]}}' | Set-Content -Encoding UTF8 $config
-    & $InnoCompiler '/Qp' ('/DTestRoot=' + $testRoot) 'installer\CodexPet.iss'
+    & $InnoCompiler '/Qp' ('/DTestRoot=' + $testRoot) ('/DPublishRoot=' + $PublishRoot) 'installer\CodexPet.iss'
     if ($LASTEXITCODE -ne 0) { throw '시험용 설치 파일 컴파일 실패' }
     $setup = Join-Path $root 'artifacts\setup\CodexPet-isolated-test.exe'
     $before = Get-Content -Raw -Encoding UTF8 $config
@@ -26,6 +27,23 @@ try {
     if ((Get-Content -Raw -Encoding UTF8 $config) -ne $before) { throw '등록 실패가 기존 설정을 변경했습니다.' }
     $installed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-') -Wait -PassThru -WindowStyle Hidden
     if ($installed.ExitCode -ne 0) { throw "설치 실패: $($installed.ExitCode)" }
+    foreach ($project in @('App', 'Hook', 'Install')) {
+        $directory = if ($project -eq 'Install') { 'Installer' } else { $project }
+        $exe = Join-Path (Join-Path $appDir $directory) "CodexPet.$project.exe"
+        if (!(Test-Path -LiteralPath $exe)) { throw "실행 파일이 설치되지 않았습니다: $exe" }
+        $version = (Get-Content -Raw -Encoding UTF8 'version.txt').Trim()
+        if ([Diagnostics.FileVersionInfo]::GetVersionInfo($exe).ProductVersion -ne $version) { throw "설치된 제품 버전 불일치: $exe" }
+    }
+    if (Get-ChildItem -LiteralPath $appDir -Recurse -File | Where-Object { $_.Extension -in @('.gif', '.pdb') }) {
+        throw '설치 파일에 GIF 또는 디버그 심볼이 포함되어 있습니다.'
+    }
+    foreach ($license in Get-ChildItem -File -LiteralPath (Join-Path $PublishRoot 'Licenses')) {
+        $installedLicense = Join-Path (Join-Path $appDir 'Licenses') $license.Name
+        if (!(Test-Path -LiteralPath $installedLicense) -or
+            [Convert]::ToBase64String([IO.File]::ReadAllBytes($license.FullName)) -ne [Convert]::ToBase64String([IO.File]::ReadAllBytes($installedLicense))) {
+            throw "설치된 라이선스가 원본과 다릅니다: $($license.Name)"
+        }
+    }
     $installed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-') -Wait -PassThru -WindowStyle Hidden
     if ($installed.ExitCode -ne 0) { throw "재설치 실패: $($installed.ExitCode)" }
     $json = Get-Content -Raw -Encoding UTF8 $config | ConvertFrom-Json
@@ -55,7 +73,7 @@ try {
     foreach ($item in @('settings.json', 'images\example.png', 'Logs\hook.log', 'Logs\v2\hook.log')) {
         if (!(Test-Path -LiteralPath (Join-Path $appDir $item))) { throw "사용자 데이터가 보존되지 않았습니다: $item" }
     }
-    & $InnoCompiler '/Qp' ('/DTestRoot=' + $testRoot) '/DTestDeleteData' 'installer\CodexPet.iss'
+    & $InnoCompiler '/Qp' ('/DTestRoot=' + $testRoot) ('/DPublishRoot=' + $PublishRoot) '/DTestDeleteData' 'installer\CodexPet.iss'
     if ($LASTEXITCODE -ne 0) { throw '삭제 선택 시험 설치 파일 컴파일 실패' }
     $installed = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-') -Wait -PassThru -WindowStyle Hidden
     if ($installed.ExitCode -ne 0) { throw "삭제 선택 시험 설치 실패: $($installed.ExitCode)" }

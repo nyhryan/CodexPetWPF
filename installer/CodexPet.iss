@@ -1,4 +1,12 @@
-#define MyAppVersion "0.1.0"
+#define VersionFile FileOpen(AddBackslash(SourcePath) + "..\version.txt")
+#if VersionFile == 0
+  #error Cannot read version.txt
+#endif
+#define MyAppVersion Trim(FileRead(VersionFile))
+#call FileClose(VersionFile)
+#ifndef PublishRoot
+  #error Run installer/build.ps1 to publish files and supply PublishRoot
+#endif
 [Setup]
 AppId={{4D6B1288-E743-4C2C-9C60-30BFF4A06383}
 AppName=CodexPet
@@ -29,10 +37,11 @@ AllowCancelDuringInstall=no
 UninstallDisplayIcon={app}\App\CodexPet.App.exe
 
 [Files]
-Source: "..\artifacts\publish\App\*"; DestDir: "{app}\App"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\artifacts\publish\Hook\*"; DestDir: "{app}\Hook"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\artifacts\publish\Install\CodexPet.Install.exe"; DestDir: "{app}\Installer"; Flags: ignoreversion
-Source: "..\artifacts\publish\Install\CodexPet.Install.exe"; Flags: dontcopy
+Source: "{#PublishRoot}\App\*"; DestDir: "{app}\App"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PublishRoot}\Hook\*"; DestDir: "{app}\Hook"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PublishRoot}\Install\CodexPet.Install.exe"; DestDir: "{app}\Installer"; Flags: ignoreversion
+Source: "{#PublishRoot}\Install\CodexPet.Install.exe"; Flags: dontcopy
+Source: "{#PublishRoot}\Licenses\*"; DestDir: "{app}\Licenses"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 #ifndef TestRoot

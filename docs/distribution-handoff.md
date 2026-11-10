@@ -20,16 +20,16 @@
 
 | 명세 | 현재 상태 | 남은 작업 |
 |---|---|---|
-| [Spec 1: Windows 배포 패키지와 빌드](features/windows-distribution-package.md) | Spec 2 작업 중 세 실행 파일의 self-contained publish, Inno Setup 스크립트와 시험용 설치 파일 빌드 절차가 추가됐다. 명세의 상태 표시는 아직 ‘구현 전’이라 현재와 맞지 않는다. | 공통 버전 관리, 빌드·배포 절차 완성, 라이선스·외부 고지, 최종 배포 파일·해시·안내 준비와 검증. |
-| [Spec 2: 설치·삭제와 전역 훅 연동](features/installation-and-global-hooks.md) | 사용자별 고정 경로 설치, 훅 등록·식별·제거, 오류 시 중단과 선택적 사용자 데이터 삭제를 구현했다. 격리 경로의 시험용 설치 파일로 주요 성공·실패 흐름을 검사했다. | 실제 Codex의 신뢰·이벤트 수신, 일반 설치·제거 화면의 사용자 조작, 별도 계정과 개발 도구 없는 Windows 환경, 최종 배포 파일의 전체 흐름 검증 및 필요한 수정. |
+| [Spec 1: Windows 배포 패키지와 빌드](features/windows-distribution-package.md) | 공통 버전, 격리된 게시 결과를 사용하는 빌드, MIT 라이선스 및 외부 고지와 배포 안내 초안을 마련했다. | 개발 도구 없는 환경, 최종 파일의 내용·고지·해시·안내 및 공개 접근성 검증. |
+| [Spec 2: 설치·삭제와 전역 훅 연동](features/installation-and-global-hooks.md) | 사용자가 실제 설치·Codex 연동·제거의 기본 흐름을 확인했고 기존 훅 보존을 격리 시험했다. | 상세 이벤트와 실제 기존 훅, 삭제 선택, 별도 계정과 개발 도구 없는 환경, 최종 배포 파일 검증. |
 | [Spec 3: 보안 점검 및 개선](features/security-review-and-hardening.md) | 이벤트 최소화, 입력 제한, 오류 중심 로그와 순환을 구현했다. 초기 의존성 검사와 같은 계정의 파이프 이벤트 위조·서버 선점을 재현했다. | 파이프 잔여 위험 판단, 다른 사용자·권한 수준 검증, 정상 이벤트 크기 확인, 최종 의존성·설치 파일 재점검과 미해결 사항의 기록·판단. |
 | Spec 4: 0.1.0 릴리스 검증과 배포 | [최초 분할 대화](distribution-conversation.md)에 목적과 항목은 있지만 독립된 Spec 4 문서나 질문지는 아직 없다. | Spec 1~3의 결과를 반영한 명세와 필요한 질문지를 만들고, 최종 설치 파일로 전체 검증과 공개 판단을 진행. |
 
 ### Spec 1에서 할 일
 
-- [ ] 앱·훅·설치 보조 프로그램의 버전을 한 곳에서 관리하고 제품 정보, 설치 화면과 파일명에 `0.1.0`이 일관되게 반영되도록 한다. 현재 `installer/CodexPet.iss`에 버전이 있지만 프로젝트 전체의 공통 버전 관리는 없다.
-- [ ] `installer/build.ps1`과 `installer/CodexPet.iss`를 바탕으로 SDK·Inno Setup·실제 포함 런타임의 버전과 출처, 복원·빌드·실패 복구 절차, 결과 위치와 정리 방법을 확정한다. 이번 시험에는 .NET SDK `10.0.403`, Inno Setup `7.1.1`을 사용했다. 다른 PC의 경로와 도구는 별도로 확인한다.
-- [ ] CodexPet 자체 라이선스를 권리자가 선택하고, `XamlAnimatedGif`, .NET 런타임, Inno Setup 및 설치 보조 프로그램을 포함한 실제 구성의 라이선스와 필요한 고지를 확인해 배포물에 반영한다.
+- [x] 앱·훅·설치 보조 프로그램과 설치 파일의 버전을 `version.txt`에서 관리한다.
+- [x] [빌드 안내](features/distribution-build-guide.md)에 도구, 복원·빌드·실패 복구와 결과 위치를 기록했다. 현재 시험에는 SDK `10.0.403`, Inno Setup `7.1.1`을 사용했다.
+- [ ] CodexPet 자체 MIT 라이선스와 외부 고지를 포함하도록 준비했다. 최종 배포물의 실제 구성과 .NET 런타임의 배포 조건을 공개 전에 재확인한다.
 - [ ] 최종 설치 파일에 필요한 실행 파일과 런타임이 있고 개인 이미지나 불필요한 파일이 없는지 확인한다. 개발 도구와 별도 런타임이 없는 지원 환경에서 실행을 검증한다.
 - [ ] 최종 파일명·보관 위치, 공개 GitHub Releases 접근성, 지원 범위·변경 사항·제한·설치 안내·미서명 및 Windows 경고·SHA-256 안내를 준비한다. 최종 파일이 확정된 뒤 그 파일의 해시를 계산한다.
 
@@ -58,10 +58,10 @@
 
 ## 구현된 명세 중 다시 방문할 것
 
-- [사용자 이미지 명세](features/user-provided-images.md): 이미지 사본 저장, 이미지 없는 상태와 이전 `asset:` 설정 이행 등은 구현과 자동 시험이 있지만, 문서의 ‘구현 전’ 표시와 과거 코드 설명은 오래됐다. 실제 코드·검사와 대조해 상태를 갱신하고 완료와 미검증을 구분한다. 설치 파일에서 이전 GIF가 제외됐는지, 등록한 이미지가 실제로 표시·재생되는지도 확인한다. 과거 Git 이력의 이미지에 대해서는 권리와 공개 상태를 확인한 뒤 대응을 별도로 판단한다.
+- [사용자 이미지 명세](features/user-provided-images.md): 이미지 사본 저장, 이미지 없는 상태와 이전 `asset:` 설정 이행 등은 구현과 자동 시험이 있지만, 문서의 ‘구현 전’ 표시와 과거 코드 설명은 오래됐다. 실제 코드·검사와 대조해 상태를 갱신하고 완료와 미검증을 구분한다. 최종 설치 파일에서 이전 GIF가 제외됐는지, 등록한 이미지가 실제로 표시·재생되는지도 확인한다. 과거 Git 이력의 이미지에 대해서는 권리와 공개 상태를 확인한 뒤 대응을 별도로 판단한다.
 - [위젯 상태 표시](features/show-state-widget.md): 상태 전환과 파이프 자동 검사는 있지만, 실제 Codex에서 이벤트 순서·승인·중단·압축, `Stop` 등의 빈 표준 출력, GIF 재생과 화면 모양은 아직 확인해야 한다. Spec 2·4의 실제 환경 검사와 함께 수행한다.
 - [설정 메뉴](features/configuration-menu.md): 자동 검사한 설정 저장·이행·복구 외에도 설치된 앱에서 이미지와 문구 편집, 오류 안내 등 실제 UI를 확인한다. 설정·이미지 사본의 제거 시 보존은 Spec 2·3과 함께 확인한다.
-- [Spec 1](features/windows-distribution-package.md)과 [Spec 3](features/security-review-and-hardening.md)의 과거 시점 서술도 현재 구현과 대조한다. 특히 Spec 1의 ‘구현 전’ 표기와 Spec 3 결과의 과거 ‘설치 미구현’ 기록을 주의한다. 과거 검사 결과는 새 결과와 시점을 구분한다.
+- [Spec 3](features/security-review-and-hardening.md)의 과거 시점 서술도 현재 구현과 대조한다. 특히 과거 ‘설치 미구현’ 기록에 주의한다. 과거 검사 결과는 새 결과와 시점을 구분한다.
 
 ## 권장 진행 순서
 
@@ -91,7 +91,7 @@ dotnet run --project CodexPet.Tests --no-build -- --integration
 
 ```powershell
 .\installer\build.ps1 -InnoCompiler 'C:\path\to\ISCC.exe'
-.\installer\test-isolated.ps1 -InnoCompiler 'C:\path\to\ISCC.exe'
+.\installer\test-isolated.ps1 -InnoCompiler 'C:\path\to\ISCC.exe' -PublishRoot 'C:\path\to\artifacts\builds\<식별자>\publish'
 ```
 
-빌드 결과는 `artifacts\setup\CodexPet-Setup-0.1.0-win-x64.exe`다. 이는 미서명 시험 파일이며 최종 릴리스 승인을 뜻하지 않는다. 재빌드하면 내용과 해시가 달라질 수 있으므로 공개할 파일을 확정한 뒤 해시를 기록한다.
+빌드 출력에 표시된 게시 폴더를 격리 시험에 지정한다. 빌드 결과는 `artifacts\setup\CodexPet-Setup-0.1.0-win-x64.exe`다. 실패한 빌드 이후 이전 파일이 남아 있을 수 있다. 이는 미서명 시험 파일이며 최종 릴리스 승인을 뜻하지 않는다. 재빌드하면 내용과 해시가 달라질 수 있으므로 공개할 파일을 확정한 뒤 해시를 기록한다. 현재 절차는 [빌드 안내](features/distribution-build-guide.md)를 따른다.

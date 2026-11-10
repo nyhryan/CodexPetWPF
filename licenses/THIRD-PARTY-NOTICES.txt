@@ -1,0 +1,14 @@
+CodexPet includes the following third-party components.
+
+XamlAnimatedGif 2.3.2, by Thomas Levesque and contributors
+https://github.com/XamlAnimatedGif/XamlAnimatedGif
+Licensed under the Apache License, Version 2.0; see XamlAnimatedGif-Apache-2.0.txt.
+
+Microsoft .NET runtime and Windows Desktop runtime
+https://dotnet.microsoft.com/
+See the accompanying Microsoft.NETCore.App and Microsoft.WindowsDesktop.App
+license and third-party notices files. The actual versions are recorded by the
+build process in the published runtimeconfig.json files.
+
+The installer was built using Inno Setup, copyright Jordan Russell and
+contributors. See Inno-Setup.txt and https://jrsoftware.org/.

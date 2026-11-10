@@ -51,4 +51,4 @@ Windows x64, .NET 10 SDK와 Inno Setup 컴파일러가 필요합니다. NuGet �
 .\installer\build.ps1 -InnoCompiler 'C:\path\to\ISCC.exe'
 ```
 
-중간 파일은 `artifacts\publish`, 설치 파일은 `artifacts\setup\CodexPet-Setup-0.1.0-win-x64.exe`에 생성됩니다. 테스트 빌드에는 .NET SDK 10.0.403과 Inno Setup 7.1.1을 사용했습니다. 이 파일은 서명되지 않았으며 실제 공개용 파일의 라이선스·고지, 버전 일관성, 해시와 최종 설치 시나리오는 Spec 1·3·4에서 별도로 확인해야 합니다.
+중간 파일은 실행마다 별도의 `artifacts\builds\<식별자>\publish`, 성공한 설치 파일은 `artifacts\setup\CodexPet-Setup-0.1.0-win-x64.exe`에 생성됩니다. 빌드에 실패하면 기존 설치 파일은 이번 결과가 아닙니다. 도구·고지·실패 복구와 격리 시험 방법은 [빌드 및 배포 준비](distribution-build-guide.md)를 참고하세요. 설치 파일은 서명되지 않았으며 최종 파일의 고지, 해시와 설치 시나리오는 공개 전에 다시 확인해야 합니다.
